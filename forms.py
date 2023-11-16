@@ -18,10 +18,14 @@ class RegisterForm(FlaskForm):
     email = StringField("Email", validators=[Email("Must be a valid email address, i.e. your_email@email.com"), DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
     name = StringField("Name", validators=[DataRequired()])
-    submit = SubmitField("Sign Me Up!")
+    submit = SubmitField("Sign Up!")
 
 
-# TODO: Create a LoginForm to login existing users
+# WTForm for Logging in a User
+class LoginForm(FlaskForm):
+    email = StringField("Email", validators=[Email("Must be a valid email address, i.e. your_email@email.com"), DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired()])
+    submit = SubmitField("Log In!")
 
 
 # TODO: Create a CommentForm so users can leave comments below posts

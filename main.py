@@ -8,7 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
-from forms import CreatePostForm, RegisterForm
+from forms import CreatePostForm, RegisterForm, LoginForm
 
 
 app = Flask(__name__)
@@ -16,7 +16,16 @@ app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
-# TODO: Configure Flask-Login
+
+# Configures Flask-Login's Login Manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+# Creates the user_callback
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, user_id)
 
 
 # CONNECT TO DB
@@ -70,10 +79,23 @@ def register():
     return render_template("register.html", form=form)
 
 
-# TODO: Retrieve a user from the database based on their email. 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
+    """
+    Logs in the user by checking the email and hashed password in the Database
+    match the input by the user for Authentication
+    :return: The login page for GET or redirects to all posts after user login is successful for POST
+    """
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        result = db.session.execute(db.select(User).where(User.email == email))
+        user = result.scalar()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('get_all_posts'))
+    return render_template('login.html', form=form)
 
 
 @app.route('/logout')
