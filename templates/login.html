@@ -1,5 +1,6 @@
-{% from "bootstrap5/form.html" import render_form %} {% block content %} {%
-include "header.html" %}
+{% from "bootstrap5/form.html" import render_form %}
+{% block content %}
+{% include "header.html" %}
 
 <!-- Page Header -->
 <header
@@ -21,9 +22,8 @@ include "header.html" %}
 <main class="mb-4">
   <div class="container">
     <div class="row">
-      <!-- TODO: add a flash message here for users registering twice -->
       <div class="col-lg-8 col-md-10 mx-auto">
-        <!--TODO: render login form here-->
+        {{ render_form(form, novalidate=True, button_map={'submit': 'primary'}) }}
       </div>
     </div>
   </div>
