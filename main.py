@@ -1,18 +1,16 @@
 from datetime import date
-from flask import Flask, abort, render_template, redirect, url_for, flash
+from flask import Flask, render_template, redirect, url_for, flash
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
-from flask_gravatar import Gravatar
-from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
+from flask_login import UserMixin, login_user, LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
-from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.orm import relationship
 from forms import CreatePostForm, RegisterForm, LoginForm
+from ignored.secret import the_secret
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '' # REPLACE WHEN DEVELOPING #
+app.config['SECRET_KEY'] = the_secret()
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
@@ -63,6 +61,15 @@ def register():
     """Registers a new User to the Database. Salting and Hashing passwords utilized."""
     form = RegisterForm()
     if form.validate_on_submit():
+
+        # Check to see if the user is already in the Database.
+        result = db.session.execute(db.select(User).where(User.email == form.email.data))
+        user = result.scalar()
+        if user:
+            # User already exists
+            flash('This email is already registered! Please register a different email address or ')
+            return redirect(url_for('register'))
+
         hash_and_salted_pw = generate_password_hash(
             form.password.data,
             method='pbkdf2:sha256',
@@ -75,6 +82,10 @@ def register():
         )
         db.session.add(new_user)
         db.session.commit()
+
+        # Authenticates the user with Flask-login.
+        login_user(new_user)
+
         return redirect(url_for('get_all_posts'))
     return render_template("register.html", form=form)
 
