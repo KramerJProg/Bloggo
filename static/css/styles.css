@@ -10854,3 +10854,7 @@ header.masthead .post-heading .meta a {
 .flash a:hover {
     color: #1190a8;
 }
+
+#logged-user-anchor {
+    pointer-events: none;
+}
