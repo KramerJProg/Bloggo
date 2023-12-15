@@ -103,7 +103,10 @@ def login():
         password = form.password.data
         result = db.session.execute(db.select(User).where(User.email == email))
         user = result.scalar()
-        if user and check_password_hash(user.password, password):
+        if not user or not check_password_hash(user.password, password):
+            flash("Email or Password is incorrect. Please try again.")
+            return redirect(url_for('login'))
+        else:
             login_user(user)
             return redirect(url_for('get_all_posts'))
     return render_template('login.html', form=form)
@@ -123,7 +126,7 @@ def get_all_posts():
 
 
 # TODO: Allow logged-in users to comment on posts
-@app.route("/post/<int:post_id>")
+@app.route('/post/<int:post_id>')
 def show_post(post_id):
     requested_post = db.get_or_404(BlogPost, post_id)
     return render_template('post.html', post=requested_post)
@@ -149,7 +152,7 @@ def add_new_post():
 
 
 # TODO: Use a decorator so only an admin user can edit a post
-@app.route("/edit-post/<int:post_id>", methods=['GET', 'POST'])
+@app.route('/edit-post/<int:post_id>', methods=['GET', 'POST'])
 def edit_post(post_id):
     post = db.get_or_404(BlogPost, post_id)
     edit_form = CreatePostForm(
