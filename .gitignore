@@ -8,6 +8,7 @@ __pycache__/
 *.so
 
 ignored/secret.py
+instance/posts.db
 
 # Distribution / packaging
 .Python
