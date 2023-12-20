@@ -1,7 +1,6 @@
 from datetime import date
 from functools import wraps
 
-import flask_login
 from flask import Flask, render_template, redirect, url_for, flash, abort
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
@@ -9,7 +8,7 @@ from flask_login import UserMixin, login_user, LoginManager, logout_user, curren
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import CreatePostForm, RegisterForm, LoginForm
+from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from ignored.secret import the_secret
 
 app = Flask(__name__)
@@ -119,13 +118,14 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Logs out the current user."""
     logout_user()
     return redirect(url_for('get_all_posts'))
 
 
 @app.route('/')
 def get_all_posts():
-    """Renders all the posts on the home page"""
+    """Renders all the posts on the home page."""
     result = db.session.execute(db.select(BlogPost))
     posts = result.scalars().all()
     return render_template('index.html', all_posts=posts)
@@ -133,23 +133,28 @@ def get_all_posts():
 
 @app.route('/post/<int:post_id>')
 def show_post(post_id):
+    """Grabs the post by ID once clicked on and shows the comment section."""
     requested_post = db.get_or_404(BlogPost, post_id)
-    return render_template('post.html', post=requested_post)
+    comment_form = CommentForm()
+    return render_template('post.html', post=requested_post, form=comment_form)
 
 
 def admin_only(func):
     """Admin Only Decorator."""
+
     @wraps(func)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.id != 1:
             return abort(403)
         return func(*args, **kwargs)
+
     return decorated_function
 
 
 @app.route('/new-post', methods=['GET', 'POST'])
 @admin_only
 def add_new_post():
+    """Creates a new post by the user once submitted and redirects user to the index page."""
     form = CreatePostForm()
     if form.validate_on_submit():
         new_post = BlogPost(
@@ -169,6 +174,7 @@ def add_new_post():
 @app.route('/edit-post/<int:post_id>', methods=['GET', 'POST'])
 @admin_only
 def edit_post(post_id):
+    """Allows the user to edit the post."""
     post = db.get_or_404(BlogPost, post_id)
     edit_form = CreatePostForm(
         title=post.title,
@@ -191,17 +197,20 @@ def edit_post(post_id):
 @app.route('/delete/<int:post_id>')
 @admin_only
 def delete_post(post_id):
+    """Allows user to delete the post."""
     post_to_delete = db.get_or_404(BlogPost, post_id)
     db.session.delete(post_to_delete)
     db.session.commit()
     return redirect(url_for('get_all_posts'))
 
 
+# The About Me Page.
 @app.route('/about')
 def about():
     return render_template('about.html')
 
 
+# The Contact Me Page.
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
