@@ -34,15 +34,17 @@
         {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
         <div class="comment">
           <ul class="commentList">
+            {% for comment in post.comments: %}
             <li>
               <div class="commenterImage">
-                <img src="../static/assets/img/default-profile.jpg"  alt=""/>
+                <img src="{{ comment.comment_author.email | gravatar }}"  alt="User Profile Pic"/>
               </div>
               <div class="commentText">
-                <p>Some comment</p>
-                <span class="date sub-text">comment author name</span>
+                {{ comment.text|safe }}
+                <span class="date sub-text">{{ comment.comment_author.name }}</span>
               </div>
             </li>
+            {% endfor %}
           </ul>
         </div>
       </div>
