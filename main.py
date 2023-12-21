@@ -1,9 +1,9 @@
 from datetime import date
 from functools import wraps
-
 from flask import Flask, render_template, redirect, url_for, flash, abort
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
+from flask_gravatar import Gravatar
 from flask_login import UserMixin, login_user, LoginManager, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
@@ -37,13 +37,20 @@ db.init_app(app)
 class BlogPost(db.Model):
     __tablename__ = 'blog_posts'
     id = db.Column(db.Integer, primary_key=True)
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    author = relationship('User', back_populates='posts')
     title = db.Column(db.String(250), unique=True, nullable=False)
     subtitle = db.Column(db.String(250), nullable=False)
     date = db.Column(db.String(250), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    img_url = db.Column(db.String(250), nullable=False)
+    img_url = db.Column(db.String(500), nullable=False)
+
+    # Refers to tablename in User class 'users'.
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    # Refers to property in User class 'posts'
+    author = relationship('User', back_populates='posts')
+
+    # Refers to property in Comment class 'parent_post'.
+    comments = relationship('Comment', back_populates='parent_post')
 
 
 # User class adds a User table to the DB.
@@ -53,11 +60,46 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
     name = db.Column(db.String(100))
+
+    # Refers to property in BlogPost class 'author'
     posts = relationship('BlogPost', back_populates='author')
+
+    # Refers to property in Comment class 'comment_author'.
+    comments = relationship('Comment', back_populates='comment_author')
+
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+
+    # Refers to tablename in User class 'users'.
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    # Refers to property in User class 'comments'.
+    comment_author = relationship('User', back_populates='comments')
+
+    # Refers to tablename in BlogPost class 'blog_posts'.
+    post_id = db.Column(db.Integer, db.ForeignKey('blog_posts.id'))
+
+    # Refers to property in BlogPost class 'comments'.
+    parent_post = relationship('BlogPost', back_populates='comments')
 
 
 with app.app_context():
     db.create_all()
+
+
+gravatar = Gravatar(
+    app,
+    size=100,
+    rating='g',
+    default='retro',
+    force_default=False,
+    force_lower=False,
+    use_ssl=False,
+    base_url=None
+)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -131,11 +173,25 @@ def get_all_posts():
     return render_template('index.html', all_posts=posts)
 
 
-@app.route('/post/<int:post_id>')
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def show_post(post_id):
     """Grabs the post by ID once clicked on and shows the comment section."""
     requested_post = db.get_or_404(BlogPost, post_id)
     comment_form = CommentForm()
+
+    # Only allow logged-in users to comment on posts
+    if comment_form.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash("You need to login to leave comments.")
+            return redirect(url_for('login'))
+
+        new_comment = Comment(
+            text=comment_form.comment_text.data,
+            comment_author=current_user,
+            parent_post=requested_post
+        )
+        db.session.add(new_comment)
+        db.session.commit()
     return render_template('post.html', post=requested_post, form=comment_form)
 
 
