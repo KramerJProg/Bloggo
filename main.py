@@ -89,7 +89,7 @@ class Comment(db.Model):
 with app.app_context():
     db.create_all()
 
-
+# Gravatar is an extension to assign random avatars to user profile pictures.
 gravatar = Gravatar(
     app,
     size=100,
@@ -207,6 +207,19 @@ def admin_only(func):
     return decorated_function
 
 
+def comment_only(func):
+    """Comment Only Decorator."""
+
+    @wraps(func)
+    def check(*args, **kwargs):
+        user = db.session.execute(db.select(Comment).where(Comment.author_id == current_user.id)).scalar()
+        if not current_user.is_authenticated or current_user.id != user.author_id:
+            return abort(403)
+        return func(*args, **kwargs)
+
+    return check
+
+
 @app.route('/new-post', methods=['GET', 'POST'])
 @admin_only
 def add_new_post():
@@ -258,6 +271,15 @@ def delete_post(post_id):
     db.session.delete(post_to_delete)
     db.session.commit()
     return redirect(url_for('get_all_posts'))
+
+
+@app.route('/delete/comment/<int:comment_id>/<int:post_id>')
+@comment_only
+def delete_comment(post_id, comment_id):
+    comment_to_delete = db.get_or_404(Comment, comment_id)
+    db.session.delete(comment_to_delete)
+    db.session.commit()
+    return redirect(url_for('show_post', post_id=post_id))
 
 
 # The About Me Page.

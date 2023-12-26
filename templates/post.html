@@ -42,6 +42,9 @@
               <div class="commentText">
                 {{ comment.text|safe }}
                 <span class="date sub-text">{{ comment.comment_author.name }}</span>
+                {% if comment.comment_author.email==current_user.email: %}
+                <a href="{{url_for('delete_comment', comment_id=comment.id, post_id=post.id) }}">✘</a>
+                {% endif %}
               </div>
             </li>
             {% endfor %}
