@@ -160,7 +160,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """Logs out the current user."""
+    """Logs out the current user/admin."""
     logout_user()
     return redirect(url_for('get_all_posts'))
 
@@ -223,7 +223,7 @@ def comment_only(func):
 @app.route('/new-post', methods=['GET', 'POST'])
 @admin_only
 def add_new_post():
-    """Creates a new post by the user once submitted and redirects user to the index page."""
+    """Creates a new post by the admin once submitted and redirects user to the index page."""
     form = CreatePostForm()
     if form.validate_on_submit():
         new_post = BlogPost(
@@ -243,7 +243,7 @@ def add_new_post():
 @app.route('/edit-post/<int:post_id>', methods=['GET', 'POST'])
 @admin_only
 def edit_post(post_id):
-    """Allows the user to edit the post."""
+    """Allows the admin to edit the post."""
     post = db.get_or_404(BlogPost, post_id)
     edit_form = CreatePostForm(
         title=post.title,
@@ -266,7 +266,7 @@ def edit_post(post_id):
 @app.route('/delete/<int:post_id>')
 @admin_only
 def delete_post(post_id):
-    """Allows user to delete the post."""
+    """Allows admin to delete the post."""
     post_to_delete = db.get_or_404(BlogPost, post_id)
     db.session.delete(post_to_delete)
     db.session.commit()
@@ -276,6 +276,7 @@ def delete_post(post_id):
 @app.route('/delete/comment/<int:comment_id>/<int:post_id>')
 @comment_only
 def delete_comment(post_id, comment_id):
+    """Deletes a comment unique to the user who posted the comment."""
     comment_to_delete = db.get_or_404(Comment, comment_id)
     db.session.delete(comment_to_delete)
     db.session.commit()
@@ -285,13 +286,8 @@ def delete_comment(post_id, comment_id):
 # The About Me Page.
 @app.route('/about')
 def about():
+    """Renders the about page giving a brief overview of the application."""
     return render_template('about.html')
-
-
-# The Contact Me Page.
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
 
 
 if __name__ == '__main__':

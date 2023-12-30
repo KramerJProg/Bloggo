@@ -1,7 +1,6 @@
 {% include "header.html" %}
 {% from "bootstrap5/form.html" import render_form %}
 
-<!-- Page Header-->
 <header class="masthead" style="background-image: url('{{post.img_url}}')">
   <div class="container position-relative px-4 px-lg-5">
     <div class="row gx-4 gx-lg-5 justify-content-center">
@@ -16,7 +15,6 @@
   </div>
 </header>
 
-<!-- Post Content -->
 <article>
   <div class="container px-4 px-lg-5">
     <div class="row gx-4 gx-lg-5 justify-content-center">
@@ -28,10 +26,13 @@
         </div>
         {% endif %}
 
-        <!-- Comments Area -->
+        {% if current_user.is_authenticated: %}
+        <hr class="my-4" />
         {{ ckeditor.load() }}
         {{ ckeditor.config(name='comment_text') }}
         {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+        {% endif %}
+        <hr class="my-4" />
         <div class="comment">
           <ul class="commentList">
             {% for comment in post.comments: %}
