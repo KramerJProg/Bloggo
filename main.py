@@ -10,7 +10,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
-from ignored.secret import the_secret
 
 app = Flask(__name__)
 SECRET_KEY = os.urandom(32)
