@@ -1,3 +1,4 @@
+import os
 from datetime import date
 from functools import wraps
 from flask import Flask, render_template, redirect, url_for, flash, abort
@@ -12,7 +13,8 @@ from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from ignored.secret import the_secret
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = the_secret()
+SECRET_KEY = os.urandom(32)
+app.config['SECRET_KEY'] = SECRET_KEY
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
@@ -28,7 +30,7 @@ def load_user(user_id):
 
 
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI', 'sqlite:///posts.db')
 db = SQLAlchemy()
 db.init_app(app)
 
@@ -291,4 +293,4 @@ def about():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5002)
+    app.run(debug=False)
